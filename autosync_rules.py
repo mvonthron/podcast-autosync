@@ -20,13 +20,3 @@
 #   },
 # }
 
-#
-rules = {
-  "C890-7C63": {
-    "name": None,                                                       # if None, we will use device's declared name
-    "sync-dirs": [
-      ("/home/manuel/musique/__radio/Ruquier/", "MUSIC/Radio/Ruquier"),  # with trailing slash on source !
-      ("/home/manuel/musique/__radio/Canteloup/", "MUSIC/Radio/Canteloup"),
-    ]
-  }
-}
