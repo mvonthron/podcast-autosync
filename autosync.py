@@ -13,7 +13,7 @@ from optparse import OptionParser
 from autosync_rules import *
 
 #
-max_pause = 10
+MAX_PAUSE = 10
 
 def notify(msg):
   """
@@ -27,13 +27,22 @@ def sync(mount_point, rule):
   """
   call rsync to transfer files for each directory pair of the rule
   """
-  total = 0
+  total = -1
   
   for sync in rule["sync-dirs"]:
-    p = Popen(["rsync", "--stats", "-tr", sync[0], os.path.join(mount_point, sync[1])], stdout=PIPE)
+    cmd = ["rsync", "--stats", "-tr", sync[0], os.path.join(mount_point, sync[1])]
+    if options.verbose:
+      print ' '.join(cmd)
+    
+    p = Popen(cmd, stdout=PIPE)
+    
     for line in p.stdout.readlines():
+      if options.verbose:
+        print line, 
+
       if line.startswith("Number of files transferred"):
         total += int(re.search("(\d*)$", line).group(0))
+
 
   if total == 0:
     submsg = "Nothing to be done"
@@ -60,6 +69,8 @@ class USBDaemon:
     """
     catch "DeviceAdded" D-Bus events
     """
+    if options.verbose:
+      print uid
     
     dev_object = self.bus.get_object("org.freedesktop.Hal", uid)
     device = dbus.Interface(dev_object, 'org.freedesktop.Hal.Device')
@@ -80,7 +91,7 @@ class USBDaemon:
       rules[uuid]["name"] = device.GetProperty("volume.label")
     
     i=0
-    while not device.GetProperty("volume.is_mounted") and i < max_pause:
+    while not device.GetProperty("volume.is_mounted") and i < MAX_PAUSE:
       time.sleep(1)
       i += 1
     
@@ -102,8 +113,8 @@ class USBDaemon:
     nothing so far
     """
     
-    #uuid = device.GetProperty("volume.uuid")
-    #notify("Podcast Autosync", "%s has be removed" % rules[uuid]["name"])
+    if options.verbose:
+      print uid
 
 
   def manage_new_device(self, device):
@@ -140,13 +151,13 @@ if __name__ == "__main__":
   parser.add_option("-n", "--new-device",
                     action="store_true", dest="newdevicemode",
                     help="helps registering a new device")
-  parser.add_option("-c", "--conf",
-                    dest="conffile", metavar="FILE",
-                    help="use FILE as the configuration/rules file")
   parser.add_option("-v", "--verbose",
                     action="store_true", dest="verbose",
                     help="Verbose mode")
   (options, args) = parser.parse_args()
+  
+  if options.verbose:
+    print "Verbose mode"
   
   if options.newdevicemode:
     print "Please plug the desired device", "(a few moments may be needed afterwards)"
